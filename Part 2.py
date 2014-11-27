@@ -21,6 +21,8 @@ import csv
 #
 
 seqlist = []
+tag_count = {}
+rawDB = {}
 
 # Read data from file and sort into tags
 with open("Project Data/train", "rb") as csvfile:
@@ -35,7 +37,25 @@ with open("Project Data/train", "rb") as csvfile:
 		else:
 			subseqlist.append(row[1])
 
-print seqlist
+for i in seqlist:
+	for j in range(len(i)-1):
+		if i[j] not in rawDB:
+			rawDB[i[j]] = {}
+		if i[j+1] not in rawDB[i[j]]:
+			rawDB[i[j]][i[j+1]] = 1
+		rawDB[i[j]][i[j+1]] = rawDB[i[j]][i[j+1]] + 1
+
+for i in rawDB:
+	count = 0
+	for j in rawDB[i]:
+		count += rawDB[i][j]
+	tag_count[i] = count
+		
+for i in rawDB:
+	for j in rawDB[i]:
+		rawDB[i][j] = float(rawDB[i][j])/tag_count[i]
+		# print transition parameters to console
+		# print i, "->", j, "==", rawDB[i][j]
 
 #
 #
