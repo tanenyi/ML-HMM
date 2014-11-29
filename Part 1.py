@@ -126,8 +126,6 @@ for i in emission:
 
 text = []
 tag  = []
-check_text = []
-check_tag = []
 match_count = 0
 weighted_count = 0
 
@@ -140,8 +138,8 @@ with open("Project Data/dev.in", "rb") as csvfile:
 		else:
 			text.append(row[0])
 
-# # # greedy pockey algorithm
-#
+# # #
+# greedy pocket algorithm
 #
 
 # iterate though list of new text
@@ -177,6 +175,29 @@ for i in text:
 #
 # # #
 
+
+with open("Project Data/dev.out", "rb") as csvfile:
+	rd = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
+	# set index counter
+	i = 0
+	for row in rd:
+		# ignore empty line
+		if row == []:
+			continue
+		else:
+			# if predicted tag is the same as gold standard
+			if tag[i] == row[1]:
+				# increment match counter
+				match_count += 1
+			# increment index counter
+			i += 1
+
+# print accuracy against all words
+print "General Accuracy:", float(match_count)/len(text)*100, "%"
+
+# print accuracy against all known words
+print "Specific Accuracy:", float(match_count)/(len(text)-weighted_count)*100, "%"
+
 with open("Project Data/dev.pl.out", "w") as csvfile:
 	# set csv format
     output = ['text', 'tag']
@@ -185,28 +206,6 @@ with open("Project Data/dev.pl.out", "w") as csvfile:
     # write each row
     for i in range(0, len(text)-1):
     	writer.writerow({'text': text[i], 'tag': tag[i]})
-
-with open("Project Data/dev.out", "rb") as csvfile:
-	rd = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
-	for row in rd:
-		# ignore empty line
-		if row == []:
-			continue
-		else:
-			check_text.append(row[0])
-			check_tag.append(row[1])
-
-for i in range(len(text)):
-	# check whether tag from predicted outputs match gold standard
-	if tag[i] == check_tag[i]:
-		# increment matching count
-		match_count += 1
-
-# print accuracy against all words
-print "General Accuracy:", float(match_count)/len(text)*100, "%"
-
-# print accuracy against all known words
-print "Specific Accuracy:", float(match_count)/(len(text)-weighted_count)*100, "%"
 
 #
 #
