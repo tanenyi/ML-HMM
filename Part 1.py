@@ -198,14 +198,10 @@ print "General Accuracy:", float(match_count)/len(text)*100, "%"
 # print accuracy against all known words
 print "Specific Accuracy:", float(match_count)/(len(text)-weighted_count)*100, "%"
 
-with open("Project Data/dev.pl.out", "w") as csvfile:
-	# set csv format
-    output = ['text', 'tag']
-    writer = csv.DictWriter(csvfile, fieldnames = output, delimiter = "\t")
-    writer.writeheader()
-    # write each row
-    for i in range(0, len(text)-1):
-    	writer.writerow({'text': text[i], 'tag': tag[i]})
+f = open("Project Data/dev.pl.out", "w")
+# write each row
+for i in range(0, len(text)-1):
+    	f.write(text[i]+"\t"+tag[i]+"\n")
 
 #
 #
