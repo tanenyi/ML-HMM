@@ -62,3 +62,32 @@ for i in rawDB:
 #	End of Question 1
 #
 # # # # #
+
+
+
+# # # # #
+#
+#	Start of Question 2
+#
+#
+
+# use logarithm of probabilities instead of just probabilities otherwise it may be too small to be represented aka underflow
+
+text = []
+
+with open("Project Data/dev.in", "rb") as csvfile:
+	rd = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
+	for row in rd:
+		# ignore empty line
+		if row == []:
+			continue
+		else:
+			text.append(row[0])
+
+
+
+#
+#
+#	End of Question 2
+#
+# # # # #
