@@ -160,12 +160,20 @@ for i in text:
 					maxprob = emission[j][k]
 					# set stored argument to new value
 					argmax = j
-	# if no appropriate tags found
+
+	# if no appropriate tags are found
 	if maxprob == 0:
-		# append "unknown" tag
-		tag.append("=")
-		# increment counter for normalisation
-		weighted_count += 1
+		for k in emission[j].keys():
+			emission_temp = 1/float(counter[j]+1)
+			if emission_temp > maxprob:
+				maxprob = emission_temp
+				argmax = j
+		tag.append(argmax)
+
+		# # append "unknown" tag
+		# tag.append("=")
+		# # increment counter for normalisation
+		# weighted_count += 1
 	# if appropriate tags found
 	else:
 		# append particular tag
