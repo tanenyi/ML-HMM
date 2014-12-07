@@ -116,10 +116,9 @@ for i in emission:
 	for j in emission[i]:
 		emission[i][j] /= float(counter[i])
 
-
+# Prepare input for decoding
 text = []
 subtext = []
-path = []
 output = []
 
 with open("Project Data/dev.in", "rb") as csvfile:
@@ -132,8 +131,11 @@ with open("Project Data/dev.in", "rb") as csvfile:
 		else:
 			subtext.append(row[0])
 
+# Start Viterbi
 for subtext in text:
-	# initialize alpha
+	# initialize alpha (or pi)
+	# alpha_old -> alpha values for t-1
+	# alpha_new -> alpha values for t
 	alpha_old = {}
 	alpha_old["*"] = 1
 	seq = []
@@ -157,6 +159,7 @@ for subtext in text:
 				if k in transition[j].keys():
 					if i in emission[k].keys():
 						alpha = alpha_old[j] + math.log(transition[j][k]) + math.log(emission[k][i])
+					# if i not in emmision database
 					else:
 						alpha = alpha_old[j] + math.log(transition[j][k]) + math.log(default_emission)
 					if alpha > maxprob:
@@ -185,13 +188,16 @@ for subtext in text:
 	path = ["STOP"]
 	while seq:
 		for i in seq[-1]:
+			# i => [last tag, current tag, prob at current tag]
 			if i[1] == path[0]:
 				path.insert(0, i[0])
 				seq = seq[:-1]
 				break			
 
 	# store to output 
-	output.append([subtext, path[1:-1]])
+	# eliminate "*" and "STOP" for each path
+	output.append([subtext, path[1:-1]]) 
+
 
 
 f = open("Project Data/dev.p2.out", "w")
