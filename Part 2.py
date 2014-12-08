@@ -43,7 +43,7 @@ for i in seqlist:
 		if i[j] not in rawDB:
 			rawDB[i[j]] = {}
 		if i[j+1] not in rawDB[i[j]]:	
-			rawDB[i[j]][i[j+1]] = 1	
+			rawDB[i[j]][i[j+1]] = 0	
 		rawDB[i[j]][i[j+1]] = rawDB[i[j]][i[j+1]] + 1
 
 for i in rawDB:
@@ -82,6 +82,7 @@ transition = rawDB
 # Read data from file and sort into tags
 rawDB = {}
 counter = {}
+wordList = []
 
 with open("Project Data/train", "rb") as csvfile:
 	rd = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
@@ -89,37 +90,48 @@ with open("Project Data/train", "rb") as csvfile:
 		# ignore empty line
 		if row == []:
 			continue
+		# record words appeared
+		if row[0] not in wordList:
+			wordList.append(row[0])
 		# tag not found in dictionary (unlikely)
-		elif row[1] not in rawDB:
+		if row[1] not in rawDB:
 			# initialize counter for tag
 			counter[row[1]] = 0
 			# create tag in dictionary
 			rawDB[row[1]] = {}
-		# tag found in dictionary (most likely)
-		elif row[1] in rawDB:
-			# increment the counter for tag
-			counter[row[1]] = counter[row[1]] + 1
-			# word not found in tag dictionary
-			if row[0] not in rawDB[row[1]]:
-				# create word and set count to 1
-				rawDB[row[1]][row[0]] = 1
-			# word found in tag dictionary
-			else:
-				# increase word count
-				rawDB[row[1]][row[0]] = rawDB[row[1]][row[0]] + 1
+		# else tag found in dictionary (most likely)
+		# increment the counter for tag
+		counter[row[1]] = counter[row[1]] + 1
+		# word not found in tag dictionary
+		if row[0] not in rawDB[row[1]]:
+			# create word and set count to 1
+			rawDB[row[1]][row[0]] = 1
+		# word found in tag dictionary
+		else:
+			# increase word count
+			rawDB[row[1]][row[0]] = rawDB[row[1]][row[0]] + 1
+
+
+# assign 0 emission rate to known words not appeared in some tags
+for tag in rawDB:
+	for w in wordList:
+		if w not in rawDB[tag]:
+			rawDB[tag][w] = 0
+
 
 # Create another copy for emission matrix
 emission = rawDB
 
-# Calculate emission probability
-for i in emission:
-	for j in emission[i]:
-		emission[i][j] /= float(counter[i])
+# # Calculate emission probability
+# for i in emission:
+# 	for j in emission[i]:
+# 		emission[i][j] /= float(counter[i]+1)
 
 # Prepare input for decoding
 text = []
 subtext = []
 output = []
+newWord = []
 
 with open("Project Data/dev.in", "rb") as csvfile:
 	rd = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
@@ -129,7 +141,20 @@ with open("Project Data/dev.in", "rb") as csvfile:
 			text.append(subtext)
 			subtext = []
 		else:
+			# prepare list of distinct new words for emission update
+			if row[0] not in wordList and row[0] not in newWord:
+				newWord.append(row[0])
 			subtext.append(row[0])
+
+
+# update emission parameters based on test input
+for tag in emission:
+	for old_w in emission[tag]:
+		emission[tag][old_w] /= float(counter[tag]+len(newWord))
+	for w in newWord:
+		# if w not in emission[tag]:
+		emission[tag][w] = 1 / float(counter[tag]+len(newWord))
+
 
 # Start Viterbi
 for subtext in text:
@@ -137,8 +162,10 @@ for subtext in text:
 	# alpha_old -> alpha values for t-1
 	# alpha_new -> alpha values for t
 	alpha_old = {}
-	alpha_old["*"] = 1
+	alpha_old["*"] = 0
 	seq = []
+	# penalty for missing transition or emission
+	penalty = -100
 
 	# i -> word
 	# k -> tag for t
@@ -151,22 +178,24 @@ for subtext in text:
 			argmax = ''
 			# initialize to negative infinity
 			maxprob = -99999999999
-			# assume i is not in the emission database
-			default_emission = 1/float(counter[k] + 1)
+
+			if emission[k][i] == 0:
+				e = penalty
+			else:
+				e = math.log(emission[k][i])
 
 			for j in alpha_old.keys():
 				# if j->k in the transition database
 				if k in transition[j].keys():
-					if i in emission[k].keys():
-						alpha = alpha_old[j] + math.log(transition[j][k]) + math.log(emission[k][i])
-					# if i not in emmision database
-					else:
-						alpha = alpha_old[j] + math.log(transition[j][k]) + math.log(default_emission)
-					if alpha > maxprob:
-						maxprob = alpha
-						argmax = j
+					alpha = alpha_old[j] + math.log(transition[j][k]) + e
+				# penalize
+				else:
+					alpha = alpha_old[j] + penalty + e
+				if alpha > maxprob:
+					maxprob = alpha
+					argmax = j
 			alpha_new[k] = maxprob
-			subseq.append([argmax, k, maxprob])		
+			subseq.append((argmax, k, maxprob))		
 		
 		seq.append(subseq)
 		alpha_old = alpha_new
@@ -177,11 +206,13 @@ for subtext in text:
 	argmax = ''
 	for j in alpha_old.keys():
 		if "STOP" in transition[j]:
-			alpha = alpha_old[j]*transition[j]["STOP"]
-			if alpha > maxprob:
-				maxprob = alpha
-				argmax = j
-	subseq.append([argmax, "STOP", maxprob])	
+			alpha = alpha_old[j] + math.log(transition[j]["STOP"])
+		else:
+			alpha = alpha_old[j] + penalty
+		if alpha > maxprob:
+			maxprob = alpha
+			argmax = j
+	subseq.append((argmax, "STOP", maxprob))	
 	seq.append(subseq)
 
 	# decode
@@ -196,19 +227,49 @@ for subtext in text:
 
 	# store to output 
 	# eliminate "*" and "STOP" for each path
-	output.append([subtext, path[1:-1]]) 
-
+	output.append((subtext, path[1:-1])) 
 
 
 f = open("Project Data/dev.p2.out", "w")
 # write to dev.p2.out
 for i in output:
 	temp = [a+"\t"+b+"\n" for a,b in zip(i[0], i[1])]
-	# break
 	for k in temp:
 		f.write(k)
 	f.write("\n")
 f.close()
+
+tag = []
+with open("Project Data/dev.p2.out", "rb") as csvfile:
+	tag_f = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
+	j = 0
+	for i in tag_f:
+		if not i:
+			continue
+		else:
+			tag.append(i)
+			
+
+match_count = 0
+with open("Project Data/dev.out", "rb") as csvfile:
+	rd = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
+	# set index counter
+	i = 0
+	for row in rd:
+		# ignore empty line
+		if row == []:
+			continue
+		else:
+			# if predicted tag is the same as gold standard
+			if tag[i][1] == row[1]:
+				# increment match counter
+				match_count += 1
+			# increment index counter
+			i += 1
+
+# print accuracy against all words
+print "General Accuracy:", float(match_count)/len(tag)*100, "%"
+
 
 
 #
