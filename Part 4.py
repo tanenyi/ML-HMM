@@ -98,15 +98,9 @@ with open("Project Data/train", "rb") as csvfile:
 		# convert number to 0
 		if row[0].isdigit():
 			row[0] = "0"
-		# convert # comment to "#"
-		# if row[0].startswith("#"):
-		# 	row[0] = "#"
-		# convert "http://..." to "http"
-		if row[0].startswith("HTTP://"):
-			row[0] = "HTTP"
 		# record words appeared
 		if row[0] not in wordList:
-			wordList.append(row[0])	
+			wordList.append(row[0])
 		# tag not found in dictionary (unlikely)
 		if row[1] not in rawDB:
 			# initialize counter for tag
@@ -147,7 +141,7 @@ subtext = []
 output = []
 newWord = []
 
-with open("Project Data/dev.in", "rb") as csvfile:
+with open("Project Data/test.in", "rb") as csvfile:
 	rd = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
 	for row in rd:
 		# take empty line as start of a new sentence
@@ -163,12 +157,6 @@ with open("Project Data/dev.in", "rb") as csvfile:
 			# convert number to 0
 			if row[0].isdigit():
 				row[0] = "0"
-			# convert # comment to "#"
-			# if row[0].startswith("#"):
-			# 	row[0] = "#"
-			# convert "http://..." to "http"
-			if row[0].startswith("HTTP://"):
-				row[0] = "HTTP"
 			# prepare list of distinct new words for emission update
 			if row[0] not in wordList and row[0] not in newWord:
 				newWord.append(row[0])
@@ -258,8 +246,8 @@ for subtext in text:
 	output.append((subtext, path[1:-1])) 
 
 
-f = open("Project Data/dev.p3.out", "w")
-# write to dev.p2.out
+f = open("Project Data/test.out", "w")
+# write to dev.p3.out
 for i in output:
 	temp = [a+"\t"+b+"\n" for a,b in zip(i[0], i[1])]
 	for k in temp:
@@ -267,36 +255,7 @@ for i in output:
 	f.write("\n")
 f.close()
 
-tag = []
-with open("Project Data/dev.p3.out", "rb") as csvfile:
-	tag_f = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
-	j = 0
-	for i in tag_f:
-		if not i:
-			continue
-		else:
-			tag.append(i)
-			
-
-match_count = 0
-with open("Project Data/dev.out", "rb") as csvfile:
-	rd = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
-	# set index counter
-	i = 0
-	for row in rd:
-		# ignore empty line
-		if row == []:
-			continue
-		else:
-			# if predicted tag is the same as gold standard
-			if tag[i][1] == row[1]:
-				# increment match counter
-				match_count += 1
-			# increment index counter
-			i += 1
-
-# print accuracy against all words
-print "General Accuracy:", float(match_count)/len(tag)*100, "%"
+print "Task complete"
 
 
 
