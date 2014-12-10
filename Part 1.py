@@ -12,6 +12,9 @@ rawDB = {}
 # Number counter for each tag
 counter = {}
 
+# List of distinct words
+wordList = []
+
 #
 #
 #	End of Startup
@@ -33,33 +36,27 @@ with open("Project Data/train", "rb") as csvfile:
 		# ignore empty line
 		if row == []:
 			continue
-		# tag not found in dictionary
-		elif row[1] not in rawDB:
+		# record words appeared
+		if row[0] not in wordList:
+			wordList.append(row[0])
+		# tag not found in dictionary (unlikely)
+		if row[1] not in rawDB:
 			# initialize counter for tag
 			counter[row[1]] = 0
 			# create tag in dictionary
 			rawDB[row[1]] = {}
-		# tag found in dictionary
-		elif row[1] in rawDB:
-			# increment the counter for tag
-			counter[row[1]] = counter[row[1]] + 1
-			# word not found in tag dictionary
-			if row[0] not in rawDB[row[1]]:
-				# create word and set count to 1
-				rawDB[row[1]][row[0]] = 1
-			# word found in tag dictionary
-			else:
-				# increase word count
-				rawDB[row[1]][row[0]] = rawDB[row[1]][row[0]] + 1
+		# else tag found in dictionary (most likely)
+		# increment the counter for tag
+		counter[row[1]] = counter[row[1]] + 1
+		# word not found in tag dictionary
+		if row[0] not in rawDB[row[1]]:
+			# create word and set count to 1
+			rawDB[row[1]][row[0]] = 1
+		# word found in tag dictionary
+		else:
+			# increase word count
+			rawDB[row[1]][row[0]] = rawDB[row[1]][row[0]] + 1
 
-# Create another copy
-emission = rawDB
-
-# Calculate emission probability
-for i in emission:
-	for j in emission[i]:
-		emission[i][j] /= float(counter[i])
-		# print "Tag:", i, " | Value:", j, " | Count:", emission[i][j]
 
 #
 #
@@ -82,32 +79,41 @@ with open("Project Data/train", "rb") as csvfile:
 		# ignore empty line
 		if row == []:
 			continue
+		# record words appeared
+		if row[0] not in wordList:
+			wordList.append(row[0])
 		# tag not found in dictionary (unlikely)
-		elif row[1] not in rawDB:
+		if row[1] not in rawDB:
 			# initialize counter for tag
 			counter[row[1]] = 0
 			# create tag in dictionary
 			rawDB[row[1]] = {}
-		# tag found in dictionary (most likely)
-		elif row[1] in rawDB:
-			# increment the counter for tag
-			counter[row[1]] = counter[row[1]] + 1
-			# word not found in tag dictionary
-			if row[0] not in rawDB[row[1]]:
-				# create word and set count to 1
-				rawDB[row[1]][row[0]] = 1
-			# word found in tag dictionary
-			else:
-				# increase word count
-				rawDB[row[1]][row[0]] = rawDB[row[1]][row[0]] + 1
+		# else tag found in dictionary (most likely)
+		# increment the counter for tag
+		counter[row[1]] = counter[row[1]] + 1
+		# word not found in tag dictionary
+		if row[0] not in rawDB[row[1]]:
+			# create word and set count to 1
+			rawDB[row[1]][row[0]] = 1
+		# word found in tag dictionary
+		else:
+			# increase word count
+			rawDB[row[1]][row[0]] = rawDB[row[1]][row[0]] + 1
+
+
+# assign 0 emission rate to known words not appeared in some tags
+for tag in rawDB:
+	for w in wordList:
+		if w not in rawDB[tag]:
+			rawDB[tag][w] = 0
 
 # Create another copy
 emission = rawDB
 
 # Calculate emission probability
-for i in emission:
-	for j in emission[i]:
-		emission[i][j] /= float(counter[i])
+# for i in emission:
+# 	for j in emission[i]:
+# 		emission[i][j] /= float(counter[i])
 		# print "Tag:", i, " | Value:", j, " | Count:", emission[i][j]
 
 #
@@ -128,6 +134,8 @@ text = []
 tag  = []
 match_count = 0
 weighted_count = 0
+newWord = []
+
 
 with open("Project Data/dev.in", "rb") as csvfile:
 	rd = csv.reader(csvfile, delimiter = "\t", quotechar = None, skipinitialspace = True)
@@ -137,6 +145,19 @@ with open("Project Data/dev.in", "rb") as csvfile:
 			continue
 		else:
 			text.append(row[0])
+			# prepare list of distinct new words for emission update
+			if row[0] not in wordList and row[0] not in newWord:
+				newWord.append(row[0])
+
+# update emission parameters based on test input
+for t in emission:
+	for old_w in emission[t]:
+		emission[t][old_w] /= float(counter[t]+len(newWord))
+	for w in newWord:
+		# if w not in emission[t]:
+		emission[t][w] = 1 / float(counter[t]+len(newWord))
+
+
 
 # # #
 # greedy pocket algorithm
@@ -160,24 +181,8 @@ for i in text:
 					maxprob = emission[j][k]
 					# set stored argument to new value
 					argmax = j
-
-	# if no appropriate tags are found
-	if maxprob == 0:
-		for k in emission[j].keys():
-			emission_temp = 1/float(counter[j]+1)
-			if emission_temp > maxprob:
-				maxprob = emission_temp
-				argmax = j
-		tag.append(argmax)
-
-		# # append "unknown" tag
-		# tag.append("=")
-		# # increment counter for normalisation
-		# weighted_count += 1
-	# if appropriate tags found
-	else:
-		# append particular tag
-		tag.append(argmax)
+	# append particular tag
+	tag.append(argmax)
 
 #
 #
@@ -204,7 +209,7 @@ with open("Project Data/dev.out", "rb") as csvfile:
 print "General Accuracy:", float(match_count)/len(text)*100, "%"
 
 # print accuracy against all known words
-print "Specific Accuracy:", float(match_count)/(len(text)-weighted_count)*100, "%"
+# print "Specific Accuracy:", float(match_count)/(len(text)-weighted_count)*100, "%"
 
 f = open("Project Data/dev.pl.out", "w")
 # write each row
