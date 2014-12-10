@@ -252,7 +252,7 @@ for subtext in text:
 	output.append((subtext, path[1:-1])) 
 
 
-f = open("Project Data/test.out", "w")
+f = open("Project Data/test.p3.out", "w")
 # write to dev.p2.out
 for i in output:
 	temp = [a+"\t"+b+"\n" for a,b in zip(i[0], i[1])]

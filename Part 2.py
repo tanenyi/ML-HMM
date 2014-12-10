@@ -269,6 +269,7 @@ with open("Project Data/dev.out", "rb") as csvfile:
 
 # print accuracy against all words
 print "General Accuracy:", float(match_count)/len(tag)*100, "%"
+# General Accuracy: 75.885509839 %
 
 
 

@@ -110,26 +110,6 @@ for tag in rawDB:
 # Create another copy
 emission = rawDB
 
-# Calculate emission probability
-# for i in emission:
-# 	for j in emission[i]:
-# 		emission[i][j] /= float(counter[i])
-		# print "Tag:", i, " | Value:", j, " | Count:", emission[i][j]
-
-#
-#
-#	End of Question 2
-#
-# # # # #
-
-
-
-# # # # #
-#
-#	Start of Question 3
-#
-#
-
 text = []
 tag  = []
 match_count = 0
@@ -157,6 +137,20 @@ for t in emission:
 		# if w not in emission[t]:
 		emission[t][w] = 1 / float(counter[t]+len(newWord))
 
+
+#
+#
+#	End of Question 2
+#
+# # # # #
+
+
+
+# # # # #
+#
+#	Start of Question 3
+#
+#
 
 
 # # #
