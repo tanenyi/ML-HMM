@@ -98,9 +98,6 @@ with open("Project Data/train", "rb") as csvfile:
 		# convert number to 0
 		if row[0].isdigit():
 			row[0] = "0"
-		# convert # comment to "#"
-		# if row[0].startswith("#"):
-		# 	row[0] = "#"
 		# convert "http://..." to "http"
 		if row[0].startswith("HTTP://"):
 			row[0] = "HTTP"
@@ -163,9 +160,6 @@ with open("Project Data/dev.in", "rb") as csvfile:
 			# convert number to 0
 			if row[0].isdigit():
 				row[0] = "0"
-			# convert # comment to "#"
-			# if row[0].startswith("#"):
-			# 	row[0] = "#"
 			# convert "http://..." to "http"
 			if row[0].startswith("HTTP://"):
 				row[0] = "HTTP"

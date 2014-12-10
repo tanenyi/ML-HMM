@@ -98,9 +98,12 @@ with open("Project Data/train", "rb") as csvfile:
 		# convert number to 0
 		if row[0].isdigit():
 			row[0] = "0"
+		# convert "http://..." to "http"
+		if row[0].startswith("HTTP://"):
+			row[0] = "HTTP"
 		# record words appeared
 		if row[0] not in wordList:
-			wordList.append(row[0])
+			wordList.append(row[0])	
 		# tag not found in dictionary (unlikely)
 		if row[1] not in rawDB:
 			# initialize counter for tag
@@ -157,6 +160,9 @@ with open("Project Data/test.in", "rb") as csvfile:
 			# convert number to 0
 			if row[0].isdigit():
 				row[0] = "0"
+			# convert "http://..." to "http"
+			if row[0].startswith("HTTP://"):
+				row[0] = "HTTP"
 			# prepare list of distinct new words for emission update
 			if row[0] not in wordList and row[0] not in newWord:
 				newWord.append(row[0])
@@ -247,7 +253,7 @@ for subtext in text:
 
 
 f = open("Project Data/test.out", "w")
-# write to dev.p3.out
+# write to dev.p2.out
 for i in output:
 	temp = [a+"\t"+b+"\n" for a,b in zip(i[0], i[1])]
 	for k in temp:
@@ -256,8 +262,6 @@ for i in output:
 f.close()
 
 print "Task complete"
-
-
 
 #
 #
